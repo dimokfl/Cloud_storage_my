@@ -1,10 +1,9 @@
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.Socket;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ResourceBundle;
 
 import javafx.application.Platform;
@@ -15,37 +14,43 @@ import javafx.scene.control.TextField;
 
 public class ChatController implements Initializable {
 
-    private InputStream is;
-    private OutputStream os;
+    private String root = "client/clientFiles";
+    private DataInputStream is;
+    private DataOutputStream os;
     private byte[] buffer;
 
     public ListView<String> listView;
 
-    public TextField textField;
+    public TextField statusBar;
 
     public void send(ActionEvent actionEvent) throws IOException {
-        String msg = textField.getText();
-        os.write(msg.getBytes(StandardCharsets.UTF_8));
+        String fileName = listView.getSelectionModel().getSelectedItem();
+        Path filePath = Paths.get(root, fileName);
+        long size = Files.size(filePath);
+        os.writeUTF(fileName);
+        os.writeLong(size);
+        Files.copy(filePath, os);
         os.flush();
-        textField.clear();
+        statusBar.setText("File: " + fileName + " sent to server");
     }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         buffer = new byte[256];
         try {
-            File dir = new File("./");
+            File dir = new File(root);
             listView.getItems().clear();
             listView.getItems().addAll(dir.list());
             Socket socket = new Socket("localhost", 8189);
-            is = socket.getInputStream();
-            os = socket.getOutputStream();
+            is = new DataInputStream(socket.getInputStream());
+            os = new DataOutputStream(socket.getOutputStream());
             Thread readThread = new Thread(() -> {
                 try {
                     while (true) {
-                        int read = is.read(buffer);
-                        String msg = new String(buffer, 0, read);
-                        Platform.runLater(() -> listView.getItems().add(msg));
+                        String status = is.readUTF();
+                        Platform.runLater(() -> {
+                            statusBar.setText(status);
+                        });
                     }
                 } catch (Exception e) {
                     System.err.println("Exception while read");
