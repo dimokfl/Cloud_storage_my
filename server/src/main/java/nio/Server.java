@@ -3,13 +3,14 @@ package nio;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Server {
 
@@ -69,6 +70,12 @@ public class Server {
             }
         }
         System.out.println("received: " + sb);
+        if (name.startsWith("/")){
+            if (name.startsWith("/ls")){
+            //какой то код
+            //ниче не понятно
+            }
+        }
         for (SelectionKey selectionKey : selector.keys()) {
             if (selectionKey.isValid() && selectionKey.channel() instanceof SocketChannel) {
                 SocketChannel ch = (SocketChannel) selectionKey.channel();
